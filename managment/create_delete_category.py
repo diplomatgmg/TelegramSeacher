@@ -1,13 +1,16 @@
 import os
 
-from managment.services import get_choice_input, is_valid_filename
+import main
+from managment.services import (
+    get_choice_input,
+    is_valid_filename,
+    get_category_files,
+    get_filename_from_extension,
+)
 from managment.settings import CATEGORY_DIRECTORY_NAME
 
 
 def choice_category():
-    if CATEGORY_DIRECTORY_NAME not in os.listdir():
-        os.mkdir(CATEGORY_DIRECTORY_NAME)
-
     message = """\nЧто Вы хотите сделать?
         1. Создать категорию
         2. Удалить категорию
@@ -20,10 +23,10 @@ def choice_category():
 
         return main()
 
-    if action == 1:
+    elif action == 1:
         return create_category()
 
-    if action == 2:
+    elif action == 2:
         return delete_category()
 
 
@@ -41,45 +44,49 @@ def create_category():
         file_name = is_valid_filename(action_or_filename)
 
         if file_name:
-            with open(f"{CATEGORY_DIRECTORY_NAME}/{file_name}.txt", "w"):
+            with open(
+                f"{CATEGORY_DIRECTORY_NAME}/{file_name}.csv", "w", encoding="utf-8"
+            ):
                 print(f'\nКатегория "{file_name}" успешно создана.')
-            return choice_category()
+            return main.main()
 
 
 def delete_category():
-    directory_files = os.listdir(CATEGORY_DIRECTORY_NAME)
+    category_files = get_category_files()
 
-    if not directory_files:
-        print('У вас нет категорий для удаления!')
+    if not category_files:
+        print("У вас нет категорий для удаления!")
         return choice_category()
-
-    categories_files = {index: file_name for index, file_name in enumerate(directory_files, start=1)}
 
     message = """\nВыберите категорию для удаления
         0. Назад"""
 
-    for index, file_name in categories_files.items():
-        message += f'''
-        {index}. {file_name}'''
+    for index, file_name_with_extension in category_files.items():
+        file_name = get_filename_from_extension(file_name_with_extension)
+        message += f"""
+        {index}. {file_name}"""
 
-    action = get_choice_input(message, 0, len(categories_files))
+    action = get_choice_input(message, 0, len(category_files))
 
     if action == 0:
         return choice_category()
 
-    selected_file: str = categories_files[action]
-    selected_file_for_print = selected_file.replace('.txt', '')
+    selected_category_with_extension = category_files[action]
+    selected_category_for_print = get_filename_from_extension(
+        selected_category_with_extension
+    )
 
-    print(f'''\nВы выбрали категорию "{selected_file_for_print}". Удаляем?
+    print(
+        f"""\nВы выбрали категорию "{selected_category_for_print}". Удаляем?
         1. Да
-        0. Нет''')
+        0. Нет"""
+    )
 
     action = input()
 
-    if action != '1':
+    if action != "1":
         return delete_category()
     else:
-        os.remove(f'{CATEGORY_DIRECTORY_NAME}/{selected_file}')
-        print(f'Категория "{selected_file_for_print}" удалена!')
+        os.remove(f"{CATEGORY_DIRECTORY_NAME}/{selected_category_with_extension}")
+        print(f'Категория "{selected_category_for_print}" удалена!')
         return choice_category()
-
