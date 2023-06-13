@@ -6,15 +6,18 @@ from managment.services import (
     is_valid_filename,
     get_category_files,
     get_filename_from_extension,
+    get_action_for_channels,
 )
-from managment.settings import CATEGORY_DIRECTORY_NAME
+from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT
 
 
 def choice_category():
-    message = """\nЧто Вы хотите сделать?
-        1. Создать категорию
-        2. Удалить категорию
-        0. В главное меню"""
+    message = (
+        f"\nЧто Вы хотите сделать?"
+        f"{INDENT}1. Создать категорию"
+        f"{INDENT}2. Удалить категорию"
+        f"{INDENT}0. В главное меню"
+    )
 
     action = get_choice_input(message, 0, 2)
 
@@ -31,8 +34,7 @@ def choice_category():
 
 
 def create_category():
-    message = """\nУкажите название категории
-        0. Назад"""
+    message = f"\nУкажите название категории" f"{INDENT}0. Назад"
 
     while True:
         print(message)
@@ -55,18 +57,12 @@ def delete_category():
     category_files = get_category_files()
 
     if not category_files:
-        print("У вас нет категорий для удаления!")
+        print("\nУ вас нет категорий для удаления!")
         return choice_category()
 
-    message = """\nВыберите категорию для удаления
-        0. Назад"""
-
-    for index, file_name_with_extension in category_files.items():
-        file_name = get_filename_from_extension(file_name_with_extension)
-        message += f"""
-        {index}. {file_name}"""
-
-    action = get_choice_input(message, 0, len(category_files))
+    action = get_action_for_channels(
+        "\nВыберите категорию для удаления каналов", category_files
+    )
 
     if action == 0:
         return choice_category()
@@ -77,9 +73,9 @@ def delete_category():
     )
 
     print(
-        f"""\nВы выбрали категорию "{selected_category_for_print}". Удаляем?
-        1. Да
-        0. Нет"""
+        f'\nВы выбрали категорию "{selected_category_for_print}". Удаляем?'
+        f"{INDENT}1. Да"
+        f"{INDENT}0. Нет"
     )
 
     action = input()

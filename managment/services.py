@@ -5,7 +5,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-from managment.settings import CATEGORY_DIRECTORY_NAME
+from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT
 
 
 def clear_screen() -> None:
@@ -21,13 +21,13 @@ def get_choice_input(message: str, min_num: int, max_num: int) -> int:
             choice_input_num = int(choice_input)
             if not (min_num <= choice_input_num <= max_num):
                 clear_screen()
-                print(f"Проверьте корректность введенного значения!")
+                print(f"\nПроверьте корректность введенного значения!")
                 continue
             else:
                 return choice_input_num
         else:
             clear_screen()
-            print("Вы должны ввести число!")
+            print("\nВы должны ввести число!")
 
 
 def is_valid_filename(filename: str) -> str | bool:
@@ -60,6 +60,64 @@ def get_category_files() -> dict:
     return category_files
 
 
+def get_action_for_channels(message: str, category_files: dict = None) -> int:
+    category_files = category_files or get_category_files()
+
+    for index, file_name_with_extension in category_files.items():
+        file_name = get_filename_from_extension(file_name_with_extension)
+        message += f"{INDENT}{index}. {file_name}"
+
+    message += f"{INDENT}0. Назад"
+
+    action = get_choice_input(message, 0, len(category_files))
+    return action
+
+
+def check_channel_link(channel_link) -> str | bool:
+    tg_url = "https://t.me/"
+
+    while True:
+        if channel_link.startswith("@"):
+            channel_link = tg_url + channel_link[1:]
+            break
+        elif channel_link.startswith(tg_url):
+            break
+        else:
+            print(
+                '\nУбедитесь в корректности ссылки/идентификатора канала! Повторите ввод. Для выхода введите "0"'
+            )
+            return False
+
+    return channel_link
+
+
+def csv_channel_manager(method: str, category_path: str) -> int:
+    print(
+        "\nНачните вводить телеграм-каналы. "
+        "После каждого ввода жмите Enter. "
+        'Для выхода введите "0"'
+        '\nФормат ввода - "https://t.me/идентификатор_канала" или "@идентификатор_канала"\n'
+    )
+
+    while True:
+        link_channel_or_action = input()
+
+        if link_channel_or_action == "0":
+            return 0
+
+        link_channel = check_channel_link(link_channel_or_action)
+
+        if not link_channel:
+            continue
+
+        if method == "write":
+            write_channel_to_csv(category_path, link_channel)
+        elif method == "remove":
+            remove_channel_from_csv(category_path, link_channel)
+
+        print('\nПродолжайте вводить каналы или введите "0" для выхода.\n')
+
+
 def write_channel_to_csv(category_path: str, channel_link: str) -> None:
     channel_page = requests.get(channel_link)
     channel_content = BeautifulSoup(channel_page.content, "html.parser")
@@ -82,6 +140,27 @@ def read_channels_from_csv(category_path: str) -> dict:
         reader = csv.reader(file)
         channels_dict = {link: name for link, name in reader}
         return channels_dict
+
+
+def remove_channel_from_csv(file_path: str, link_to_remove: str) -> None:
+    to_remove = False
+    lines = []
+    with open(file_path, "r", newline="", encoding="utf-8") as file:
+        reader = csv.reader(file)
+        for row in reader:
+            channel_link, channel_name = row
+            if channel_link == link_to_remove:
+                to_remove = True
+                print(f'\nКанал "{channel_name}" успешно удалён!')
+            else:
+                lines.append(row)
+
+    if to_remove:
+        with open(file_path, "w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerows(lines)
+    else:
+        print("\nДанного телеграм-канала нет в списке!")
 
 
 def get_filename_from_extension(filename: str) -> str:

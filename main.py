@@ -1,12 +1,14 @@
 from managment.services import get_choice_input
-from managment.settings import DEBUG
+from managment.settings import DEBUG, INDENT
 
 
 def main():
-    message = """\nЧто Вы хотите сделать? 
-        1. Создать/удалить категорию
-        2. Добавить/удалить каналы
-        3. Искать по ключевому слову"""
+    message = (
+        f"\nЧто Вы хотите сделать? "
+        f"{INDENT}1. Создать/удалить категорию"
+        f"{INDENT}2. Добавить/удалить каналы"
+        f"{INDENT}3. Искать по ключевому слову"
+    )
 
     action = get_choice_input(message, 1, 3)
 
@@ -16,7 +18,7 @@ def main():
         return choice_category()
 
     elif action == 2:
-        from managment.add_delete_channels import choice_channels
+        from managment.add_remove_channels import choice_channels
 
         return choice_channels()
     elif action == 3:
@@ -25,6 +27,6 @@ def main():
 
 if __name__ == "__main__":
     if DEBUG:
-        print("Включен режим отладки")
+        print("\nВключен режим отладки")
 
     main()
