@@ -1,11 +1,12 @@
 import os
 
 from managment.services import get_choice_input, is_valid_filename
+from managment.settings import CATEGORY_DIRECTORY_NAME
 
 
 def choice_category():
-    if 'category' not in os.listdir():
-        os.mkdir('category')
+    if CATEGORY_DIRECTORY_NAME not in os.listdir():
+        os.mkdir(CATEGORY_DIRECTORY_NAME)
 
     message = """\nЧто Вы хотите сделать?
         1. Создать категорию
@@ -40,13 +41,13 @@ def create_category():
         file_name = is_valid_filename(action_or_filename)
 
         if file_name:
-            with open(f"categories/{file_name}.txt", "w"):
+            with open(f"{CATEGORY_DIRECTORY_NAME}/{file_name}.txt", "w"):
                 print(f'\nКатегория "{file_name}" успешно создана.')
             return choice_category()
 
 
 def delete_category():
-    directory_files = os.listdir('categories')
+    directory_files = os.listdir(CATEGORY_DIRECTORY_NAME)
 
     if not directory_files:
         print('У вас нет категорий для удаления!')
@@ -58,8 +59,8 @@ def delete_category():
         0. Назад"""
 
     for index, file_name in categories_files.items():
-        message += (f'''
-        {index}. {file_name}''')
+        message += f'''
+        {index}. {file_name}'''
 
     action = get_choice_input(message, 0, len(categories_files))
 
@@ -78,5 +79,7 @@ def delete_category():
     if action != '1':
         return delete_category()
     else:
-         pass
+        os.remove(f'{CATEGORY_DIRECTORY_NAME}/{selected_file}')
+        print(f'Категория "{selected_file_for_print}" удалена!')
+        return choice_category()
 
