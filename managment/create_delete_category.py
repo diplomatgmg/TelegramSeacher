@@ -4,7 +4,7 @@ import requests
 from http import HTTPStatus
 import main
 from managment.services import (
-    get_choice_input,
+    validate_number_with_message,
     is_valid_filename,
     get_category_files,
     get_filename_from_extension,
@@ -21,7 +21,7 @@ def choice_category():
         f"{INDENT}0. В главное меню"
     )
 
-    action = get_choice_input(message, 0, 2)
+    action = validate_number_with_message(message, 0, 2)
 
     if action == 0:
         from main import main
@@ -82,12 +82,15 @@ def delete_category():
 
     action = input()
 
-    if action != "1":
-        return delete_category()
-    else:
+    if action == "1":
         os.remove(f"{CATEGORY_DIRECTORY_NAME}/{selected_category_with_extension}")
-        print(f'Категория "{selected_category_for_print}" удалена!')
+        print(f'\nКатегория "{selected_category_for_print}" удалена!')
         return choice_category()
+    else:
+        print(f'\nОтмена удаления категории "{selected_category_for_print}"')
+        return delete_category()
+
+
 
 
 def connect_to_site(url: str):

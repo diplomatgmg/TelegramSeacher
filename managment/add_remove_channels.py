@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from managment.create_delete_category import create_category, connect_to_site
 from managment.services import (
     get_category_files,
-    get_choice_input,
+    validate_number_with_message,
     get_filename_from_extension,
     get_action_for_channels,
     csv_channel_manager,
@@ -28,11 +28,10 @@ def choice_channels():
         3. Удалить каналы
         0. В главное меню"""
 
-    action = get_choice_input(message, 0, 3)
+    action = validate_number_with_message(message, 0, 3)
 
     if action == 0:
         from main import main
-
         return main()
 
     elif action == 1:
@@ -49,7 +48,7 @@ def manage_channels(method: str, automatic=False):
     category_files = get_category_files()
 
     action = get_action_for_channels(
-        f"\nВыберите категорию для {'' if automatic else ('добавления' if method == 'write' else 'удаления')} каналов",
+        f"\nВыберите категорию для {'автоматического добавления' if automatic else ('ручного добавления' if 'write' in (method, automatic) else 'удаления')} каналов",
         category_files,
     )
 
@@ -69,17 +68,17 @@ def manage_channels(method: str, automatic=False):
     if not automatic:
         action = csv_channel_manager(method, category_path)
         if action == 0:
-            return choice_channels()
+            return manage_channels(method, automatic)
     else:
         while True:
             category_href = input(
                 '\nПерейдите на сайт "https://all-catalog.ru/", '
                 "выберите нужную категорию и вставьте ее сюда."
-                f"{INDENT}0. Назад\n"
+                f"{INDENT}0. Выбрать другую категорию для автоматического добавления каналов\n"
             )
 
             if category_href == "0":
-                return choice_channels()
+                return manage_channels(method, automatic)
 
             category_page = connect_to_site(category_href)
 
@@ -126,7 +125,7 @@ def manage_channels(method: str, automatic=False):
             f"{INDENT}0. Назад"
         )
 
-        action = get_choice_input(message, 0, len(channels_hrefs))
+        action = validate_number_with_message(message, 0, len(channels_hrefs))
 
         if action == 0:
             return choice_channels()

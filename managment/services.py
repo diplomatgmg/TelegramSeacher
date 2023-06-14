@@ -12,7 +12,7 @@ def clear_screen() -> None:
     os.system("cls")
 
 
-def get_choice_input(message: str, min_num: int, max_num: int) -> int:
+def validate_number_with_message(message: str, min_num: int, max_num: int) -> int:
     while True:
         print(message)
         choice_input = input()
@@ -20,13 +20,11 @@ def get_choice_input(message: str, min_num: int, max_num: int) -> int:
         if choice_input.isnumeric():
             choice_input_num = int(choice_input)
             if not (min_num <= choice_input_num <= max_num):
-                clear_screen()
                 print(f"\nПроверьте корректность введенного значения!")
                 continue
             else:
                 return choice_input_num
         else:
-            clear_screen()
             print("\nВы должны ввести число!")
 
 
@@ -67,9 +65,9 @@ def get_action_for_channels(message: str, category_files: dict = None) -> int:
         file_name = get_filename_from_extension(file_name_with_extension)
         message += f"{INDENT}{index}. {file_name}"
 
-    message += f"{INDENT}0. Назад"
+    message += f"{INDENT}0. В главное меню"
 
-    action = get_choice_input(message, 0, len(category_files))
+    action = validate_number_with_message(message, 0, len(category_files))
     return action
 
 
@@ -97,8 +95,9 @@ def csv_channel_manager(method: str, category_path: str) -> int:
     print(
         "\nНачните вводить телеграм-каналы. "
         "После каждого ввода жмите Enter. "
-        'Для выхода введите "0"'
-        '\nФормат ввода - "https://t.me/идентификатор_канала" или "@идентификатор_канала"\n'
+        '\nФормат ввода - "https://t.me/идентификатор_канала" или "@идентификатор_канала"'
+        f"{INDENT}0. Выбрать другую категорию для "
+        f"{'ручного добавления' if method == 'write' else 'удаления'} каналов"
     )
 
     while True:
@@ -175,3 +174,13 @@ def remove_channel_from_csv(file_path: str, link_to_remove: str) -> None:
 
 def get_filename_from_extension(filename: str) -> str:
     return filename.replace(".csv", "")
+
+
+def combine_words(words: str) -> list:
+    result = []
+
+    for word in words.split():
+        word = " ".join(word.split("+"))
+        result.append(word)
+
+    return result

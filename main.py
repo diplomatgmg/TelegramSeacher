@@ -1,4 +1,4 @@
-from managment.services import get_choice_input
+from managment.services import validate_number_with_message
 from managment.settings import DEBUG, INDENT
 
 
@@ -10,19 +10,19 @@ def main():
         f"{INDENT}3. Искать по ключевому слову"
     )
 
-    action = get_choice_input(message, 1, 3)
+    action = validate_number_with_message(message, 1, 3)
 
     if action == 1:
         from managment.create_delete_category import choice_category
-
         return choice_category()
 
     elif action == 2:
         from managment.add_remove_channels import choice_channels
-
         return choice_channels()
+
     elif action == 3:
-        pass
+        from managment.searcher import preparing_search
+        preparing_search()
 
 
 if __name__ == "__main__":
