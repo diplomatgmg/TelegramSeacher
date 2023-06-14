@@ -74,7 +74,7 @@ def get_action_for_channels(message: str, category_files: dict = None) -> int:
 
 
 def check_channel_link(channel_link) -> str | bool:
-    tg_url = "https://t.me/"
+    tg_url = "https://t.me/s/"
 
     while True:
         if channel_link.startswith("@"):
@@ -82,6 +82,8 @@ def check_channel_link(channel_link) -> str | bool:
             break
         elif channel_link.startswith(tg_url):
             break
+        elif channel_link.startswith(tg_url[:2]):
+            channel_link = tg_url + channel_link.split("/")[-1]
         else:
             print(
                 '\nУбедитесь в корректности ссылки/идентификатора канала! Повторите ввод. Для выхода введите "0"'
@@ -125,8 +127,10 @@ def write_channel_to_csv(
         channel_page = requests.get(channel_link)
         channel_content = BeautifulSoup(channel_page.content, "html.parser")
         channel_name = channel_content.find(
-            "div", class_="tgme_page_title"
+            "div", class_="tgme_channel_info_header_title"
         ).text.strip()
+    else:
+        channel_link = check_channel_link(channel_link)
 
     channels_dict = read_channels_from_csv(category_path)
 
