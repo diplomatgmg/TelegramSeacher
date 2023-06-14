@@ -1,5 +1,7 @@
 import os
 
+import requests
+from http import HTTPStatus
 import main
 from managment.services import (
     get_choice_input,
@@ -8,7 +10,7 @@ from managment.services import (
     get_filename_from_extension,
     get_action_for_channels,
 )
-from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT
+from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT, SITE_AUTO_ADD
 
 
 def choice_category():
@@ -86,3 +88,14 @@ def delete_category():
         os.remove(f"{CATEGORY_DIRECTORY_NAME}/{selected_category_with_extension}")
         print(f'Категория "{selected_category_for_print}" удалена!')
         return choice_category()
+
+
+def connect_to_site(url: str):
+    if url.startswith(SITE_AUTO_ADD) and url != SITE_AUTO_ADD:
+        page = requests.get(url)
+        if page.status_code == HTTPStatus.OK:
+            return page
+        elif page.status_code == HTTPStatus.NOT_FOUND:
+            print("\nСтраница не найдена! Проверьте корректность введённой ссылки!")
+
+    print("\nПроверьте корректность введённой ссылки!")

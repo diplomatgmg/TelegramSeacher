@@ -118,12 +118,18 @@ def csv_channel_manager(method: str, category_path: str) -> int:
         print('\nПродолжайте вводить каналы или введите "0" для выхода.\n')
 
 
-def write_channel_to_csv(category_path: str, channel_link: str) -> None:
-    channel_page = requests.get(channel_link)
-    channel_content = BeautifulSoup(channel_page.content, "html.parser")
-    channel_name = channel_content.find("div", class_="tgme_page_title").text.strip()
+def write_channel_to_csv(
+    category_path: str, channel_link: str, channel_name=None, permanent=False
+) -> None:
+    if not permanent:
+        channel_page = requests.get(channel_link)
+        channel_content = BeautifulSoup(channel_page.content, "html.parser")
+        channel_name = channel_content.find(
+            "div", class_="tgme_page_title"
+        ).text.strip()
 
     channels_dict = read_channels_from_csv(category_path)
+
     if channel_link in channels_dict.keys():
         print(f"\nКанал {channels_dict[channel_link]} уже добавлен!")
         return
