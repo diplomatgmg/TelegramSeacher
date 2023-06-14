@@ -92,11 +92,21 @@ def manage_channels(method: str, automatic=False):
         category_name = category_raw_name.split("«")[1].split("»")[0]
 
         div_pages = category_content.find("div", {"style": "margin-bottom: 10px"})
-        pages = div_pages.find_all("a")
+
+        if not div_pages:
+            pages = [category_href.split('/')[-1]]
+        else:
+            pages = div_pages.find_all("a")
+
         channels_hrefs = set()
 
         for page in pages:
-            page_href = page.get("href")
+            page: str | BeautifulSoup
+            if type(page) != str:
+                page_href = page.get("href")
+            else:
+                page_href = page
+
             if page_href:
                 category_href = SITE_AUTO_ADD + "/tg_category/" + page_href
                 category_page = connect_to_site(category_href)
