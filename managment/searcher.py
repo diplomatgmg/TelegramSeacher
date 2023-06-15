@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
 from managment.create_delete_category import choice_category
+from managment.send_tg import send_telegram
 from managment.services import (
     validate_number_with_message,
     combine_words,
@@ -13,15 +14,15 @@ from managment.services import (
     SESSION,
     convert_time,
 )
-from managment.settings import INDENT, CATEGORY_DIRECTORY_NAME
+from managment.settings import INDENT, CATEGORY_DIRECTORY_NAME, TELEGRAM_DOMAIN, DEBUG
 
-KEYWORDS = None
+KEYWORDS = list()
 
 
-def get_keywords(old_keywords=None):
+def get_keywords(old_keywords=None, category_path=None):
     global KEYWORDS
 
-    if old_keywords is not None:
+    if old_keywords:
         keywords = input(
             f"\nПрошлые ключевые слова: {old_keywords}.\n"
             f"\nВведите ключевые слова или нажмите 'Enter', чтобы оставить прошлые.\n"
@@ -31,7 +32,9 @@ def get_keywords(old_keywords=None):
             return preparing_search(KEYWORDS, skip_category=True)
         else:
             KEYWORDS = combine_words(keywords)
-            return preparing_search(KEYWORDS, skip_category=True)
+            return preparing_search(
+                KEYWORDS, skip_category=True, category_path=category_path
+            )
 
     action_or_keywords = input(
         "\nВведите через пробел ключевые слова для поиска.\n"
@@ -60,7 +63,9 @@ def print_hours_message(hours: int) -> None:
         print(f"\nВыполняется поиск новостей за последние {hours} часов")
 
 
-def preparing_search(old_keywords: list = None, skip_category=False):
+def preparing_search(
+    old_keywords: list = None, skip_category=False, category_path=None
+):
     global KEYWORDS
 
     if not skip_category:
@@ -87,7 +92,7 @@ def preparing_search(old_keywords: list = None, skip_category=False):
 
         print(f'\nВы выбрали категорию "{selected_category_for_print}"')
 
-    if old_keywords is None and KEYWORDS is None:
+    if not old_keywords and not KEYWORDS:
         KEYWORDS = get_keywords()
 
     print(f"\nКлючевые слова: {str(KEYWORDS)}")
@@ -104,7 +109,7 @@ def preparing_search(old_keywords: list = None, skip_category=False):
     time_interval = validate_number_with_message(message, min_num, max_num)
 
     if time_interval == 0:
-        return get_keywords(KEYWORDS)
+        return get_keywords(KEYWORDS, category_path)
 
     print_hours_message(time_interval)
 
@@ -112,34 +117,68 @@ def preparing_search(old_keywords: list = None, skip_category=False):
 
 
 def searcher(category_path: str, time_interval: int):
+    global KEYWORDS
+
     datetime_interval = datetime.now() - timedelta(hours=time_interval)
     channels_dict = read_channels_from_csv(category_path)
 
     for channel_href, channel_name in channels_dict.items():
-        channel_page = SESSION.get(channel_href)
-        channel_soup = BeautifulSoup(channel_page.content, "html.parser")
+        bad_time = False  # Если все посты в ленте подходят по времени
+        channel_page_next = None
+        incorrect_channel = False
 
-        messages_block_channel = reversed(
-            channel_soup.find_all(
-                "div",
-                class_="tgme_widget_message text_not_supported_wrap js-widget_message",
+        while not bad_time and not incorrect_channel:
+            channel_page = SESSION.get(channel_page_next or channel_href)
+            channel_soup = BeautifulSoup(channel_page.content, "html.parser")
+
+            # Парсим посты снизу в верх
+            messages_blocks = reversed(
+                channel_soup.find_all(
+                    "div",
+                    class_="tgme_widget_message text_not_supported_wrap js-widget_message",
+                )
             )
-        )
 
-        for message_block in messages_block_channel:
-            message_time_and_href = message_block.find(
-                "a", class_="tgme_widget_message_date"
-            )
+            for message_block in messages_blocks:
+                message_time_and_href = message_block.find(
+                    "a", class_="tgme_widget_message_date"
+                )
 
-            message_str_time = message_time_and_href.find("time")["datetime"]
-            message_href = message_time_and_href["href"]
+                message_str_time = message_time_and_href.find("time")["datetime"]
+                message_href = message_time_and_href["href"]
 
-            message_time = convert_time(message_str_time)
-            print(message_time, message_href)
+                message_time = convert_time(message_str_time)
 
-            if message_time < datetime_interval:
-                break
-            else:
-                pass
+                if message_time < datetime_interval:
+                    bad_time = True  # Пост в ленте идет раньше временного интервала, дальше смысла искать нет
+                    break
 
-            # TODO
+                message_raw = message_block.find(
+                    "div", class_="tgme_widget_message_text js-message_text"
+                )
+
+                if not message_raw:
+                    continue
+
+                message = message_raw.text.strip()
+
+                if any(keyword in message.lower().split() for keyword in KEYWORDS):
+                    to_send = f"{channel_name}\n({message_href})\n\n" f"{message}"
+
+                    if not DEBUG:
+                        send_telegram(to_send)
+                    else:
+                        print("=" * 80)
+                        print(to_send)
+
+            if not bad_time:
+                channel_page_next_raw = channel_soup.find(
+                    "a", class_="tme_messages_more"
+                )  # /s/....?before=...
+
+                if not channel_page_next_raw:
+                    print(f"Не удалось найти посты на канале [{channel_name}]")
+                    incorrect_channel = True
+                    continue
+
+                channel_page_next = TELEGRAM_DOMAIN + channel_page_next_raw["href"]

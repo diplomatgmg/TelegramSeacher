@@ -7,7 +7,12 @@ from http import HTTPStatus
 import requests
 from bs4 import BeautifulSoup
 
-from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT, SITE_AUTO_ADD_URL
+from managment.settings import (
+    CATEGORY_DIRECTORY_NAME,
+    INDENT,
+    SITE_AUTO_ADD_URL,
+    TELEGRAM_DOMAIN,
+)
 
 
 def clear_screen() -> None:
@@ -74,16 +79,18 @@ def get_action_for_channels(message: str, category_files: dict = None) -> int:
 
 
 def check_channel_link(channel_link) -> str | bool:
-    tg_url = "https://t.me/s/"
-
     while True:
-        if channel_link.startswith("@"):
-            channel_link = tg_url + channel_link[1:]
+        if channel_link.startswith("@"):  # @channel_link
+            channel_link = (
+                TELEGRAM_DOMAIN + "/s/" + channel_link[1:]
+            )  # https://t.me/s/channel_name
             break
-        elif channel_link.startswith(tg_url):
+        elif channel_link.startswith(TELEGRAM_DOMAIN + "/s/"):  # https://t.me/s/
             break
-        elif channel_link.startswith(tg_url[:2]):
-            channel_link = tg_url + channel_link.split("/")[-1]
+        elif channel_link.startswith(TELEGRAM_DOMAIN):  # https://t.me
+            channel_link = (
+                TELEGRAM_DOMAIN + "/s/" + channel_link.split("/")[-1]
+            )  # https://t.me/s/channel_name
         else:
             print(
                 '\nУбедитесь в корректности ссылки/идентификатора канала! Повторите ввод. Для выхода введите "0"'
@@ -222,3 +229,5 @@ def convert_time(str_time: str) -> datetime:
 
     time = datetime(year, month, day, hour, minute) + timedelta(hours=3)
     return time
+
+
