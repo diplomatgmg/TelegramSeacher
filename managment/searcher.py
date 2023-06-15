@@ -64,7 +64,7 @@ def print_hours_message(hours: int) -> None:
 
 
 def preparing_search(
-    old_keywords: list = None, skip_category=False, category_path=None
+        old_keywords: list = None, skip_category=False, category_path=None
 ):
     global KEYWORDS
 
@@ -81,7 +81,6 @@ def preparing_search(
 
         if action == 0:
             from main import main
-
             return main()
 
         selected_category_with_extension = category_files[action]
@@ -91,6 +90,15 @@ def preparing_search(
         category_path = f"{CATEGORY_DIRECTORY_NAME}/{selected_category_with_extension}"
 
         print(f'\nВы выбрали категорию "{selected_category_for_print}"')
+
+    channels_dict = read_channels_from_csv(category_path)
+
+    if not channels_dict:
+        print(f'\nВ категории "{selected_category_for_print}" '
+              f'нет ни одного канала! Добавьте или выберите другую категорию!')
+        return preparing_search(old_keywords, skip_category, category_path)
+
+
 
     if not old_keywords and not KEYWORDS:
         KEYWORDS = get_keywords()
@@ -113,14 +121,13 @@ def preparing_search(
 
     print_hours_message(time_interval)
 
-    return searcher(category_path, time_interval)
+    return searcher(channels_dict, time_interval)
 
 
-def searcher(category_path: str, time_interval: int):
+def searcher(channels_dict: dict, time_interval: int):
     global KEYWORDS
 
     datetime_interval = datetime.now() - timedelta(hours=time_interval)
-    channels_dict = read_channels_from_csv(category_path)
 
     for channel_href, channel_name in channels_dict.items():
         bad_time = False  # Если все посты в ленте подходят по времени
@@ -166,6 +173,7 @@ def searcher(category_path: str, time_interval: int):
                     to_send = f"{channel_name}\n({message_href})\n\n" f"{message}"
 
                     if not DEBUG:
+                        print(f'Новость подходит! [{channel_name}]')
                         send_telegram(to_send)
                     else:
                         print("=" * 80)

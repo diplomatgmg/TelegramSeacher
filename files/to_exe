@@ -1,0 +1,1 @@
+pyinstaller -F -i "D:\programming\TelegramSearcher\files\icon.ico" "D:\programming\TelegramSearcher\main.py"
