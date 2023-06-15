@@ -1,11 +1,13 @@
 import csv
 import os
 import re
+from datetime import datetime, timedelta
+from http import HTTPStatus
 
 import requests
 from bs4 import BeautifulSoup
 
-from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT
+from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT, SITE_AUTO_ADD_URL
 
 
 def clear_screen() -> None:
@@ -184,3 +186,39 @@ def combine_words(words: str) -> list:
         result.append(word)
 
     return result
+
+
+def connect_to_site_auto_add(url: str):
+    if url.startswith(SITE_AUTO_ADD_URL) and url != SITE_AUTO_ADD_URL:
+        page = SESSION.get(url)
+        if page.status_code == HTTPStatus.OK:
+            return page
+        elif page.status_code == HTTPStatus.NOT_FOUND:
+            print("\nСтраница не найдена! Проверьте корректность введённой ссылки!")
+
+    print("\nПроверьте корректность введённой ссылки!")
+
+
+def get_session():
+    session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
+    session.mount("https://", adapter)
+    return session
+
+
+SESSION = get_session()
+
+
+def convert_time(str_time: str) -> datetime:
+    regex = r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})"
+
+    match = re.search(regex, str_time)
+
+    year = int(match.group(1))
+    month = int(match.group(2))
+    day = int(match.group(3))
+    hour = int(match.group(4))
+    minute = int(match.group(5))
+
+    time = datetime(year, month, day, hour, minute) + timedelta(hours=3)
+    return time

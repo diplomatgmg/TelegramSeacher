@@ -3,7 +3,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-from managment.create_delete_category import create_category, connect_to_site
+from managment.create_delete_category import create_category
 from managment.services import (
     get_category_files,
     validate_number_with_message,
@@ -11,8 +11,9 @@ from managment.services import (
     get_action_for_channels,
     csv_channel_manager,
     write_channel_to_csv,
+    connect_to_site_auto_add,
 )
-from managment.settings import CATEGORY_DIRECTORY_NAME, SITE_AUTO_ADD, INDENT
+from managment.settings import CATEGORY_DIRECTORY_NAME, SITE_AUTO_ADD_URL, INDENT
 
 
 def choice_channels():
@@ -80,7 +81,7 @@ def manage_channels(method: str, automatic=False):
             if category_href == "0":
                 return manage_channels(method, automatic)
 
-            category_page = connect_to_site(category_href)
+            category_page = connect_to_site_auto_add(category_href)
 
             if category_page:
                 break
@@ -107,8 +108,8 @@ def manage_channels(method: str, automatic=False):
                 page_href = page
 
             if page_href:
-                category_href = SITE_AUTO_ADD + "/tg_category/" + page_href
-                category_page = connect_to_site(category_href)
+                category_href = SITE_AUTO_ADD_URL + "/tg_category/" + page_href
+                category_page = connect_to_site_auto_add(category_href)
                 category_content = BeautifulSoup(category_page.content, "html.parser")
 
             channels = category_content.find_all(
@@ -116,7 +117,7 @@ def manage_channels(method: str, automatic=False):
             )
 
             for channel in channels:
-                channel_href = SITE_AUTO_ADD + channel.find("a")["href"][2:]
+                channel_href = SITE_AUTO_ADD_URL + channel.find("a")["href"][2:]
                 channels_hrefs.add(channel_href)
 
         message = (

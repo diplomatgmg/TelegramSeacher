@@ -1,7 +1,5 @@
 import os
 
-import requests
-from http import HTTPStatus
 import main
 from managment.services import (
     validate_number_with_message,
@@ -10,7 +8,7 @@ from managment.services import (
     get_filename_from_extension,
     get_action_for_channels,
 )
-from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT, SITE_AUTO_ADD
+from managment.settings import CATEGORY_DIRECTORY_NAME, INDENT
 
 
 def choice_category():
@@ -46,11 +44,10 @@ def create_category():
             return choice_category()
 
         file_name = is_valid_filename(action_or_filename)
+        category_path = f"{CATEGORY_DIRECTORY_NAME}/{file_name}.csv"
 
         if file_name:
-            with open(
-                f"{CATEGORY_DIRECTORY_NAME}/{file_name}.csv", "w", encoding="utf-8"
-            ):
+            with open(category_path, "w", encoding="utf-8"):
                 print(f'\nКатегория "{file_name}" успешно создана.')
             return main.main()
 
@@ -73,6 +70,7 @@ def delete_category():
     selected_category_for_print = get_filename_from_extension(
         selected_category_with_extension
     )
+    category_path = f"{CATEGORY_DIRECTORY_NAME}/{selected_category_with_extension}"
 
     print(
         f'\nВы выбрали категорию "{selected_category_for_print}". Удаляем?'
@@ -83,22 +81,9 @@ def delete_category():
     action = input()
 
     if action == "1":
-        os.remove(f"{CATEGORY_DIRECTORY_NAME}/{selected_category_with_extension}")
+        os.remove(f"{category_path}")
         print(f'\nКатегория "{selected_category_for_print}" удалена!')
         return choice_category()
     else:
         print(f'\nОтмена удаления категории "{selected_category_for_print}"')
         return delete_category()
-
-
-
-
-def connect_to_site(url: str):
-    if url.startswith(SITE_AUTO_ADD) and url != SITE_AUTO_ADD:
-        page = requests.get(url)
-        if page.status_code == HTTPStatus.OK:
-            return page
-        elif page.status_code == HTTPStatus.NOT_FOUND:
-            print("\nСтраница не найдена! Проверьте корректность введённой ссылки!")
-
-    print("\nПроверьте корректность введённой ссылки!")

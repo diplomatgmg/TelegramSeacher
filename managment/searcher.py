@@ -1,3 +1,7 @@
+from datetime import datetime, timedelta
+
+from bs4 import BeautifulSoup
+
 from managment.create_delete_category import choice_category
 from managment.services import (
     validate_number_with_message,
@@ -5,8 +9,11 @@ from managment.services import (
     get_category_files,
     get_action_for_channels,
     get_filename_from_extension,
+    read_channels_from_csv,
+    SESSION,
+    convert_time,
 )
-from managment.settings import INDENT
+from managment.settings import INDENT, CATEGORY_DIRECTORY_NAME
 
 KEYWORDS = None
 
@@ -76,6 +83,7 @@ def preparing_search(old_keywords: list = None, skip_category=False):
         selected_category_for_print = get_filename_from_extension(
             selected_category_with_extension
         )
+        category_path = f"{CATEGORY_DIRECTORY_NAME}/{selected_category_with_extension}"
 
         print(f'\nВы выбрали категорию "{selected_category_for_print}"')
 
@@ -100,8 +108,38 @@ def preparing_search(old_keywords: list = None, skip_category=False):
 
     print_hours_message(time_interval)
 
-    return searcher()
+    return searcher(category_path, time_interval)
 
 
-def searcher():
-    print("тут поиск...")
+def searcher(category_path: str, time_interval: int):
+    datetime_interval = datetime.now() - timedelta(hours=time_interval)
+    channels_dict = read_channels_from_csv(category_path)
+
+    for channel_href, channel_name in channels_dict.items():
+        channel_page = SESSION.get(channel_href)
+        channel_soup = BeautifulSoup(channel_page.content, "html.parser")
+
+        messages_block_channel = reversed(
+            channel_soup.find_all(
+                "div",
+                class_="tgme_widget_message text_not_supported_wrap js-widget_message",
+            )
+        )
+
+        for message_block in messages_block_channel:
+            message_time_and_href = message_block.find(
+                "a", class_="tgme_widget_message_date"
+            )
+
+            message_str_time = message_time_and_href.find("time")["datetime"]
+            message_href = message_time_and_href["href"]
+
+            message_time = convert_time(message_str_time)
+            print(message_time, message_href)
+
+            if message_time < datetime_interval:
+                break
+            else:
+                pass
+
+            # TODO
