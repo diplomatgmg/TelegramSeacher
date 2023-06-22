@@ -1,3 +1,5 @@
+import sys
+from dotenv import load_dotenv
 from managment.services import validate_number_with_message
 from managment.settings import DEBUG, INDENT
 
@@ -26,7 +28,15 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
+
     if DEBUG:
         print("\nВключен режим отладки")
 
-    main()
+    try:
+        main()
+        input('\nПоиск новостей окончен. Для выхода нажмите Enter\n')
+    except:
+        input('\nПроизошла ошибка при работе программы. Обратитесь к программисту\n')
+    finally:
+        sys.exit()

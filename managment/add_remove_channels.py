@@ -54,7 +54,8 @@ def manage_channels(method: str, automatic=False):
     )
 
     if action == 0:
-        return choice_channels()
+        from main import main
+        return main()
 
     category_file_name_with_extension = category_files[action]
 
